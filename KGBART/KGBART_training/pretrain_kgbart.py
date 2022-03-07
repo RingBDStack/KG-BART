@@ -407,16 +407,6 @@ def main():
         dist.barrier()
 
     model.to(device)
-    if args.local_rank != -1:
-        try:
-            from torch.nn.parallel import DistributedDataParallel as DDP
-        except ImportError:
-            raise ImportError("DistributedDataParallel")
-        model = DDP(model, device_ids=[
-            args.local_rank], output_device=args.local_rank, find_unused_parameters=True)
-    elif n_gpu > 1:
-        # model = torch.nn.DataParallel(model)
-        model = DataParallelImbalance(model)
 
     # Prepare optimizer
     param_optimizer = list(model.named_parameters())
@@ -428,6 +418,24 @@ def main():
             nd in n for nd in no_decay)], 'weight_decay': 0.0}
     ]
     optimizer = AdamW(optimizer_grouped_parameters, lr=args.learning_rate, eps=args.adam_epsilon)
+    if args.fp16:
+        try:
+            from apex import amp
+        except ImportError:
+            raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
+
+        model, optimizer = amp.initialize(model, optimizer, opt_level=args.fp16_opt_level)
+
+    if args.local_rank != -1:
+        try:
+            from torch.nn.parallel import DistributedDataParallel as DDP
+        except ImportError:
+            raise ImportError("DistributedDataParallel")
+        model = DDP(model, device_ids=[
+            args.local_rank], output_device=args.local_rank, find_unused_parameters=True)
+    elif n_gpu > 1:
+        # model = torch.nn.DataParallel(model)
+        model = DataParallelImbalance(model)
     scheduler = get_linear_schedule_with_warmup(
         optimizer, num_warmup_steps=args.warmup_steps, num_training_steps=t_total
     )
@@ -446,14 +454,6 @@ def main():
         if args.loss_scale == 0:
             logger.info("***** Recover optimizer: dynamic_loss_scale *****")
             optimizer.dynamic_loss_scale = True
-
-    if args.fp16:
-        try:
-            from apex import amp
-        except ImportError:
-            raise ImportError("Please install apex from https://www.github.com/nvidia/apex to use fp16 training.")
-
-        model, optimizer = amp.initialize(model, optimizer, opt_level=args.fp16_opt_level)
 
     logger.info("***** CUDA.empty_cache() *****")
     torch.cuda.empty_cache()

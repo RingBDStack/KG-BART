@@ -5,8 +5,12 @@ import random
 
 random.seed(42) 
 
-train_onehop_path = "/home/yeliu/Project/CommonGen/BART/Dataset/conceptnet_train.txt"
-dev_onehop_path = "/home/yeliu/Project/CommonGen/BART/Dataset/conceptnet_dev.txt"
+
+bert_dataset_root = "../dataset/"
+
+
+train_onehop_path = bert_dataset_root +"conceptnet_train.txt"
+dev_onehop_path = bert_dataset_root +"conceptnet_dev.txt"
 
 filenames = ["commongen.train.jsonl", "commongen.dev.jsonl"]
 onehop_paths = [train_onehop_path, dev_onehop_path]
@@ -19,7 +23,7 @@ wrong_list = ['coffere', 'freestande', 'tufte', 'bobsle', 'sterle', 'preppe', 'w
 correct_list = ['coffer', 'freestanding', 'tuft', 'bobsled', 'sterling', 'prep', 'wood', 'brick', 'concert',
                 'christmas', 'purebred', 'passenger', 'trellis', 'boeing', 'redhead', 'rhinoceros']
 
-test_onehop_path = "/home/yeliu/Project/CommonGen/BART/Dataset/conceptnet_test.txt"
+test_onehop_path = bert_dataset_root +"conceptnet_test.txt"
 
 assert len(wrong_list) == len(correct_list)
 def split_file(filename, onehop_path):
